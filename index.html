@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Trading Bot</title>
+<style>
+:root {
+  color-scheme: dark;
+  --black: #000;
+  --text: #f1f2f4;
+  --silver-light: #f2f3f6;
+  --silver: #c4c8d0;
+  --silver-dim: #8e939c;
+  --silver-line: rgba(196, 200, 208, 0.35);
+  --silver-faint: rgba(196, 200, 208, 0.14);
+  --silver-glow: rgba(224, 228, 235, 0.45);
+  --gold-light: #f6d776;
+  --gold-dark: #c99a1e;
+  --danger: #d32f2f;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--black);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+button, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--silver);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 12px 0 6px;
+  background: linear-gradient(180deg, var(--silver-light), var(--silver));
+  border-bottom: 1px solid var(--silver-dim);
+}
+
+.topbar button:focus-visible {
+  outline-color: var(--black);
+}
+
+.menu-button {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menu-button span {
+  width: 22px;
+  height: 2px;
+  background: var(--black);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.gold-button {
+  height: 34px;
+  padding: 0 18px;
+  border: 1px solid var(--black);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-light), var(--gold-dark));
+  color: var(--black);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.side-menu {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: min(300px, 84vw);
+  overflow-y: auto;
+  background: var(--black);
+  border-right: 1px solid var(--silver-line);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.25s ease, visibility 0s linear 0.25s;
+}
+
+.side-menu.open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.25s ease;
+}
+
+.menu-item {
+  padding: 18px 22px;
+  border: 0;
+  border-bottom: 1px solid var(--silver-faint);
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--silver-faint);
+}
+
+.menu-item:focus-visible {
+  outline-offset: -3px;
+}
+
+dialog {
+  width: min(380px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--silver-line);
+  border-radius: 20px;
+  background: var(--black);
+  color: var(--text);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+dialog form {
+  position: relative;
+  padding: 30px 24px 26px;
+}
+
+dialog h2 {
+  margin: 0 0 22px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--silver-dim);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.field {
+  display: block;
+  width: 100%;
+  height: 46px;
+  margin-bottom: 14px;
+  padding: 0 16px;
+  border: 1px solid var(--silver-line);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+}
+
+.field::placeholder {
+  color: var(--silver-dim);
+}
+
+.field:focus {
+  border-color: var(--silver);
+  box-shadow: 0 0 12px var(--silver-glow);
+}
+
+.field:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  transition: background-color 9999s ease-out;
+}
+
+.field[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 1px var(--danger);
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 4px 0 22px;
+  color: var(--silver);
+  font-size: 14px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.consent input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--gold-dark);
+}
+
+.consent input[aria-invalid="true"] {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+dialog .gold-button {
+  display: block;
+  height: 42px;
+  margin: 0 auto;
+  padding: 0 36px;
+  font-size: 15px;
+}
+
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -24px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .side-menu, .toast {
+    transition: none;
+  }
+}
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar">
+  <button class="menu-button" id="menuButton" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sideMenu"><span></span><span></span><span></span></button>
+  <div class="actions" id="guestActions" hidden>
+    <button class="gold-button" type="button" data-open="signupDialog">Sign Up</button>
+    <button class="gold-button" type="button" data-open="loginDialog">Log In</button>
+  </div>
+</header>
+
+<nav class="side-menu" id="sideMenu" aria-label="Menu">
+  <button class="menu-item" type="button">WHY AI TRADING BOT</button>
+  <button class="menu-item" type="button">FREQUENTLY ASKED QUESTION</button>
+  <button class="menu-item" type="button">TERMS OF USE</button>
+  <button class="menu-item" type="button">PRIVACY POLICY</button>
+  <button class="menu-item" type="button">HOW TO USE THE AI TRADING BOT</button>
+  <button class="menu-item" id="logoutButton" type="button" hidden>LOG OUT</button>
+</nav>
+<div class="overlay" id="overlay"></div>
+
+<dialog id="signupDialog" aria-labelledby="signupTitle">
+  <form id="signupForm" novalidate>
+    <h2 id="signupTitle">Sign Up</h2>
+    <input class="field" name="username" type="text" placeholder="Username" aria-label="Username" maxlength="15" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <input class="field" name="email" type="email" placeholder="Email Address" aria-label="Email Address" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <input class="field" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="new-password">
+    <label class="consent"><input name="terms" type="checkbox"><span>I confirm that I am at least 18 years old and I agree to the Terms of Use.</span></label>
+    <button class="gold-button" type="submit">Sign Up</button>
+    <button class="close" type="button" aria-label="Close">&times;</button>
+    <p class="toast" role="alert"></p>
+  </form>
+</dialog>
+
+<dialog id="loginDialog" aria-labelledby="loginTitle">
+  <form id="loginForm" novalidate>
+    <h2 id="loginTitle">Log In</h2>
+    <input class="field" name="identifier" type="text" placeholder="Username or Email Address" aria-label="Username or Email Address" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    <input class="field" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password">
+    <button class="gold-button" type="submit">Log In</button>
+    <button class="close" type="button" aria-label="Close">&times;</button>
+    <p class="toast" role="alert"></p>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = 'https://wrmapzfhhdmlbubnafli.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vcH8DzDU08pJdDNOaTQj2A_tQ4FHyNi';
+
+const topbar = document.getElementById('topbar');
+const menuButton = document.getElementById('menuButton');
+const sideMenu = document.getElementById('sideMenu');
+const overlay = document.getElementById('overlay');
+const guestActions = document.getElementById('guestActions');
+const logoutButton = document.getElementById('logoutButton');
+
+const rules = {
+  username: [
+    [value => !value, 'Username is required.', true],
+    [value => /\s/.test(value), 'Username must not contain spaces.'],
+    [value => /[A-Z]/.test(value), 'Username must not contain capital letters.'],
+    [value => /[^a-z]/.test(value), 'Username can contain only English letters (a-z).'],
+    [value => value.length < 3, 'Username must be at least 3 letters long.', true]
+  ],
+  email: [
+    [value => !value, 'Email Address is required.', true],
+    [value => /\s/.test(value), 'Email Address must not contain spaces.'],
+    [value => /[A-Z]/.test(value), 'Email Address must not contain capital letters.'],
+    [value => !/^[^@]+@[^@]+\.[^@]+$/.test(value), 'Enter a valid email address.', true]
+  ],
+  password: [
+    [value => !value, 'Password is required.', true],
+    [value => /\s/.test(value), 'Password must not contain spaces.']
+  ],
+  identifier: [
+    [value => !value, 'Username or Email Address is required.', true],
+    [value => /\s/.test(value), 'Username or Email Address must not contain spaces.'],
+    [value => /[A-Z]/.test(value), 'Username or Email Address must not contain capital letters.'],
+    [value => value.includes('@') ? !/^[^@]+@[^@]+\.[^@]+$/.test(value) : !/^[a-z]{3,15}$/.test(value), 'Enter a valid username or email address.', true]
+  ],
+  terms: [
+    [(value, input) => !input.checked, 'You must confirm you are 18 or older and agree to the Terms of Use.', true]
+  ]
+};
+
+const failures = {
+  username_taken: ['This username is already taken.', ['username']],
+  user_already_exists: ['This email address is already registered.', ['email']],
+  email_exists: ['This email address is already registered.', ['email']],
+  invalid_credentials: ['Incorrect username, email address or password.', ['identifier', 'password']],
+  over_request_rate_limit: ['Too many attempts. Please try again later.'],
+  unexpected_failure: ['Something went wrong. Please try again.']
+};
+
+const fail = code => Object.assign(new Error(code), { code });
+
+function setMenu(open) {
+  if (sideMenu.classList.contains('open') === open) return;
+  sideMenu.classList.toggle('open', open);
+  overlay.classList.toggle('open', open);
+  menuButton.setAttribute('aria-expanded', String(open));
+  topbar.inert = open;
+  if (open) sideMenu.querySelector('.menu-item').focus();
+  else menuButton.focus();
+}
+
+function toast(form, message) {
+  const popup = form.querySelector('.toast');
+  if (popup.classList.contains('show')) return;
+  popup.textContent = message;
+  popup.classList.add('show');
+  popup.timer = setTimeout(() => popup.classList.remove('show'), 3000);
+}
+
+function check(input, final) {
+  const rule = rules[input.name].find(([test, , deferred]) => (final || !deferred) && test(input.value, input));
+  if (rule) input.setAttribute('aria-invalid', 'true');
+  else input.removeAttribute('aria-invalid');
+  return rule ? rule[1] : '';
+}
+
+function validate(form) {
+  const inputs = [...form.querySelectorAll('input[name]')];
+  const messages = inputs.map(input => check(input, true));
+  const index = messages.findIndex(Boolean);
+  if (index === -1) return true;
+  toast(form, messages[index]);
+  inputs[index].focus();
+  return false;
+}
+
+function resetForm(form) {
+  const popup = form.querySelector('.toast');
+  clearTimeout(popup.timer);
+  popup.classList.remove('show');
+  form.reset();
+  form.querySelectorAll('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
+}
+
+async function submit(form, action) {
+  const button = form.querySelector('[type="submit"]');
+  button.disabled = true;
+  try {
+    await action();
+    form.closest('dialog').close();
+  } catch (error) {
+    const [message, names = []] = failures[error.code] || [error.message || 'Something went wrong. Please try again.'];
+    names.forEach(name => form.elements[name].setAttribute('aria-invalid', 'true'));
+    toast(form, message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+menuButton.addEventListener('click', () => setMenu(true));
+overlay.addEventListener('click', () => setMenu(false));
+sideMenu.addEventListener('click', event => {
+  if (event.target.closest('.menu-item')) setMenu(false);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') setMenu(false);
+});
+
+document.querySelectorAll('[data-open]').forEach(button => {
+  button.addEventListener('click', () => document.getElementById(button.dataset.open).showModal());
+});
+
+document.querySelectorAll('dialog').forEach(dialog => {
+  const form = dialog.querySelector('form');
+  dialog.addEventListener('click', event => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog.addEventListener('close', () => resetForm(form));
+  form.querySelector('.close').addEventListener('click', () => dialog.close());
+  form.querySelectorAll('input[name]').forEach(input => {
+    input.addEventListener('input', () => {
+      const message = check(input, false);
+      if (message) toast(form, message);
+    });
+  });
+});
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+document.getElementById('signupForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!validate(form)) return;
+  const { username, email, password } = form.elements;
+  submit(form, async () => {
+    const availability = await sb.rpc('username_available', { p_username: username.value });
+    if (availability.error) throw availability.error;
+    if (!availability.data) throw fail('username_taken');
+    const { error } = await sb.auth.signUp({
+      email: email.value,
+      password: password.value,
+      options: { data: { username: username.value, terms_accepted: true } }
+    });
+    if (error) throw error;
+  });
+});
+
+document.getElementById('loginForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  if (!validate(form)) return;
+  const { identifier, password } = form.elements;
+  submit(form, async () => {
+    let email = identifier.value;
+    if (!email.includes('@')) {
+      const lookup = await sb.rpc('login_email', { p_username: email });
+      if (lookup.error) throw lookup.error;
+      if (!lookup.data) throw fail('invalid_credentials');
+      email = lookup.data;
+    }
+    const { error } = await sb.auth.signInWithPassword({ email, password: password.value });
+    if (error) throw error;
+  });
+});
+
+logoutButton.addEventListener('click', () => sb.auth.signOut({ scope: 'local' }));
+
+sb.auth.onAuthStateChange((_, session) => {
+  guestActions.hidden = Boolean(session);
+  logoutButton.hidden = !session;
+});
+</script>
+</body>
+</html>
