@@ -8,8 +8,8 @@
 :root {
   color-scheme: dark;
   --black: #000;
+  --white: #fff;
   --text: #f1f2f4;
-  --silver-light: #f2f3f6;
   --silver: #c4c8d0;
   --silver-dim: #8e939c;
   --silver-line: rgba(196, 200, 208, 0.35);
@@ -43,7 +43,8 @@ button {
   cursor: pointer;
 }
 
-button:focus-visible {
+button:focus-visible,
+a:focus-visible {
   outline: 2px solid var(--silver);
   outline-offset: 2px;
 }
@@ -62,12 +63,17 @@ button:disabled {
   justify-content: space-between;
   height: 56px;
   padding: 0 12px 0 6px;
-  background: linear-gradient(180deg, var(--silver-light), var(--silver));
-  border-bottom: 1px solid var(--silver-dim);
+  background: var(--black);
 }
 
-.topbar button:focus-visible {
-  outline-color: var(--black);
+.topbar::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: var(--silver-dim);
+  box-shadow: 0 0 8px 1px var(--silver-line);
+  pointer-events: none;
 }
 
 .menu-button {
@@ -86,7 +92,7 @@ button:disabled {
 .menu-button span {
   width: 22px;
   height: 2px;
-  background: var(--black);
+  background: var(--white);
 }
 
 .actions {
@@ -143,14 +149,11 @@ button:disabled {
 
 .menu-item {
   padding: 18px 22px;
-  border: 0;
   border-bottom: 1px solid var(--silver-faint);
-  background: none;
   color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
 }
 
 .menu-item:hover,
@@ -178,36 +181,18 @@ dialog::backdrop {
 }
 
 dialog form {
+  padding: 26px 24px;
+}
+
+.field-wrap {
   position: relative;
-  padding: 30px 24px 26px;
-}
-
-dialog h2 {
-  margin: 0 0 22px;
-  font-size: 20px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--silver-dim);
-  font-size: 26px;
-  line-height: 1;
+  margin-bottom: 14px;
 }
 
 .field {
   display: block;
   width: 100%;
   height: 46px;
-  margin-bottom: 14px;
   padding: 0 16px;
   border: 1px solid var(--silver-line);
   border-radius: 12px;
@@ -236,11 +221,52 @@ dialog h2 {
   box-shadow: 0 0 0 1px var(--danger);
 }
 
+.field-password {
+  padding-right: 48px;
+}
+
+.eye {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: var(--silver-dim);
+}
+
+.eye[aria-pressed="true"] {
+  color: var(--silver);
+}
+
+.eye svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.eye .slash {
+  display: none;
+}
+
+.eye[aria-pressed="true"] .slash {
+  display: inline;
+}
+
 .consent {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin: 4px 0 22px;
+  margin: 4px 0 14px;
   color: var(--silver);
   font-size: 14px;
   line-height: 1.45;
@@ -260,10 +286,14 @@ dialog h2 {
   outline-offset: 2px;
 }
 
+.consent a {
+  color: var(--gold-light);
+}
+
 dialog .gold-button {
   display: block;
   height: 42px;
-  margin: 0 auto;
+  margin: 8px auto 0;
   padding: 0 36px;
   font-size: 15px;
 }
@@ -278,7 +308,7 @@ dialog .gold-button {
   padding: 12px 18px;
   border-radius: 12px;
   background: var(--danger);
-  color: #fff;
+  color: var(--white);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.35;
@@ -308,38 +338,60 @@ dialog .gold-button {
     <button class="gold-button" type="button" data-open="signupDialog">Sign Up</button>
     <button class="gold-button" type="button" data-open="loginDialog">Log In</button>
   </div>
+  <button class="gold-button" id="logoutButton" type="button" hidden>Log Out</button>
 </header>
 
 <nav class="side-menu" id="sideMenu" aria-label="Menu">
-  <button class="menu-item" type="button">WHY AI TRADING BOT</button>
-  <button class="menu-item" type="button">FREQUENTLY ASKED QUESTION</button>
-  <button class="menu-item" type="button">TERMS OF USE</button>
-  <button class="menu-item" type="button">PRIVACY POLICY</button>
-  <button class="menu-item" type="button">HOW TO USE THE AI TRADING BOT</button>
-  <button class="menu-item" id="logoutButton" type="button" hidden>LOG OUT</button>
+  <a class="menu-item" href="#home">Home</a>
+  <a class="menu-item" href="#market">Market</a>
+  <a class="menu-item" href="#faq">FAQ</a>
+  <a class="menu-item" href="#terms-of-service">Terms of Service</a>
+  <a class="menu-item" href="#privacy-policy">Privacy Policy</a>
+  <a class="menu-item" href="#why-ai-trading">Why AI Trading?</a>
+  <a class="menu-item" href="#get-started">Get Started</a>
+  <a class="menu-item" href="#support">Support</a>
 </nav>
 <div class="overlay" id="overlay"></div>
 
-<dialog id="signupDialog" aria-labelledby="signupTitle">
+<main>
+  <section id="home" hidden></section>
+  <section id="market" hidden></section>
+  <section id="faq" hidden></section>
+  <section id="terms-of-service" hidden></section>
+  <section id="privacy-policy" hidden></section>
+  <section id="why-ai-trading" hidden></section>
+  <section id="get-started" hidden></section>
+  <section id="support" hidden></section>
+</main>
+
+<dialog id="signupDialog" aria-label="Sign Up">
   <form id="signupForm" novalidate>
-    <h2 id="signupTitle">Sign Up</h2>
-    <input class="field" name="username" type="text" placeholder="Username" aria-label="Username" maxlength="15" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
-    <input class="field" name="email" type="email" placeholder="Email Address" aria-label="Email Address" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false">
-    <input class="field" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="new-password">
-    <label class="consent"><input name="terms" type="checkbox"><span>I confirm that I am at least 18 years old and I agree to the Terms of Use.</span></label>
+    <div class="field-wrap">
+      <input class="field" name="username" type="text" placeholder="Username" aria-label="Username" maxlength="15" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field-wrap">
+      <input class="field" name="email" type="text" inputmode="email" placeholder="Email Address" aria-label="Email Address" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field-wrap">
+      <input class="field field-password" name="newPassword" type="password" placeholder="Password" aria-label="Password" maxlength="20" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <button class="eye" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="slash" d="M4 4l16 16"/></svg></button>
+    </div>
+    <label class="consent"><input name="terms" type="checkbox"><span>I confirm that I am at least 18 years old and I agree to the <a href="#terms-of-service" target="_blank" rel="noopener">Terms of Use</a>.</span></label>
     <button class="gold-button" type="submit">Sign Up</button>
-    <button class="close" type="button" aria-label="Close">&times;</button>
     <p class="toast" role="alert"></p>
   </form>
 </dialog>
 
-<dialog id="loginDialog" aria-labelledby="loginTitle">
+<dialog id="loginDialog" aria-label="Log In">
   <form id="loginForm" novalidate>
-    <h2 id="loginTitle">Log In</h2>
-    <input class="field" name="identifier" type="text" placeholder="Username or Email Address" aria-label="Username or Email Address" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
-    <input class="field" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password">
+    <div class="field-wrap">
+      <input class="field" name="identifier" type="text" placeholder="Username or Email Address" aria-label="Username or Email Address" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="field-wrap">
+      <input class="field field-password" name="password" type="password" placeholder="Password" aria-label="Password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <button class="eye" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="slash" d="M4 4l16 16"/></svg></button>
+    </div>
     <button class="gold-button" type="submit">Log In</button>
-    <button class="close" type="button" aria-label="Close">&times;</button>
     <p class="toast" role="alert"></p>
   </form>
 </dialog>
@@ -355,33 +407,42 @@ const sideMenu = document.getElementById('sideMenu');
 const overlay = document.getElementById('overlay');
 const guestActions = document.getElementById('guestActions');
 const logoutButton = document.getElementById('logoutButton');
+const sections = [...document.querySelectorAll('main section')];
+
+const emailPattern = /^[a-z0-9._+-]+@([a-z0-9-]+\.)+[a-z]{2,}$/;
+const typedInput = ['insertText', 'insertCompositionText'];
+const lowercased = ['username', 'email', 'identifier'];
+
+const filters = {
+  username: /[^a-z]/g,
+  email: /[^a-z0-9@._+-]/g,
+  identifier: /[^a-z0-9@._+-]/g,
+  newPassword: /[^\x21-\x7e]/g,
+  password: /[^\x21-\x7e]/g
+};
 
 const rules = {
   username: [
-    [value => !value, 'Username is required.', true],
-    [value => /\s/.test(value), 'Username must not contain spaces.'],
-    [value => /[A-Z]/.test(value), 'Username must not contain capital letters.'],
-    [value => /[^a-z]/.test(value), 'Username can contain only English letters (a-z).'],
-    [value => value.length < 3, 'Username must be at least 3 letters long.', true]
+    [value => !value, 'Username is required.'],
+    [value => value.length < 3, 'Username must be at least 3 letters long.']
   ],
   email: [
-    [value => !value, 'Email Address is required.', true],
-    [value => /\s/.test(value), 'Email Address must not contain spaces.'],
-    [value => /[A-Z]/.test(value), 'Email Address must not contain capital letters.'],
-    [value => !/^[^@]+@[^@]+\.[^@]+$/.test(value), 'Enter a valid email address.', true]
+    [value => !value, 'Email Address is required.'],
+    [value => !emailPattern.test(value), 'Enter a full email address, for example name@gmail.com.']
   ],
-  password: [
-    [value => !value, 'Password is required.', true],
-    [value => /\s/.test(value), 'Password must not contain spaces.']
+  newPassword: [
+    [value => !value, 'Password is required.'],
+    [value => value.length < 10, 'Password must be 10 to 20 characters long.']
   ],
   identifier: [
-    [value => !value, 'Username or Email Address is required.', true],
-    [value => /\s/.test(value), 'Username or Email Address must not contain spaces.'],
-    [value => /[A-Z]/.test(value), 'Username or Email Address must not contain capital letters.'],
-    [value => value.includes('@') ? !/^[^@]+@[^@]+\.[^@]+$/.test(value) : !/^[a-z]{3,15}$/.test(value), 'Enter a valid username or email address.', true]
+    [value => !value, 'Username or Email Address is required.'],
+    [value => value.includes('@') ? !emailPattern.test(value) : !/^[a-z]{3,15}$/.test(value), 'Enter a valid username or email address.']
+  ],
+  password: [
+    [value => !value, 'Password is required.']
   ],
   terms: [
-    [(value, input) => !input.checked, 'You must confirm you are 18 or older and agree to the Terms of Use.', true]
+    [(value, input) => !input.checked, 'You must confirm you are 18 or older and agree to the Terms of Use.']
   ]
 };
 
@@ -389,6 +450,7 @@ const failures = {
   username_taken: ['This username is already taken.', ['username']],
   user_already_exists: ['This email address is already registered.', ['email']],
   email_exists: ['This email address is already registered.', ['email']],
+  email_address_invalid: ['This email address is not accepted. Use a real email address.', ['email']],
   invalid_credentials: ['Incorrect username, email address or password.', ['identifier', 'password']],
   over_request_rate_limit: ['Too many attempts. Please try again later.'],
   unexpected_failure: ['Something went wrong. Please try again.']
@@ -406,6 +468,19 @@ function setMenu(open) {
   else menuButton.focus();
 }
 
+function showSection() {
+  const current = sections.find(section => section.id === location.hash.slice(1)) || sections[0];
+  sections.forEach(section => {
+    section.hidden = section !== current;
+  });
+}
+
+function showPassword(button, visible) {
+  button.previousElementSibling.type = visible ? 'text' : 'password';
+  button.setAttribute('aria-pressed', String(visible));
+  button.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+}
+
 function toast(form, message) {
   const popup = form.querySelector('.toast');
   if (popup.classList.contains('show')) return;
@@ -414,16 +489,38 @@ function toast(form, message) {
   popup.timer = setTimeout(() => popup.classList.remove('show'), 3000);
 }
 
-function check(input, final) {
-  const rule = rules[input.name].find(([test, , deferred]) => (final || !deferred) && test(input.value, input));
+function check(input) {
+  const rule = rules[input.name].find(([test]) => test(input.value, input));
   if (rule) input.setAttribute('aria-invalid', 'true');
   else input.removeAttribute('aria-invalid');
   return rule ? rule[1] : '';
 }
 
+function sanitize(input, typed) {
+  const pattern = filters[input.name];
+  const value = !typed && lowercased.includes(input.name) ? input.value.toLowerCase() : input.value;
+  const clean = value.replace(pattern, '');
+  if (clean === input.value) return;
+  const caret = value.slice(0, input.selectionStart).replace(pattern, '').length;
+  input.value = clean;
+  input.setSelectionRange(caret, caret);
+}
+
+let availabilityTimer;
+
+function watchUsername(input) {
+  clearTimeout(availabilityTimer);
+  const value = input.value;
+  if (!/^[a-z]{3,15}$/.test(value)) return;
+  availabilityTimer = setTimeout(async () => {
+    const { data } = await sb.rpc('username_available', { p_username: value });
+    if (data === false && input.value === value) input.setAttribute('aria-invalid', 'true');
+  }, 400);
+}
+
 function validate(form) {
   const inputs = [...form.querySelectorAll('input[name]')];
-  const messages = inputs.map(input => check(input, true));
+  const messages = inputs.map(input => check(input));
   const index = messages.findIndex(Boolean);
   if (index === -1) return true;
   toast(form, messages[index]);
@@ -437,6 +534,7 @@ function resetForm(form) {
   popup.classList.remove('show');
   form.reset();
   form.querySelectorAll('[aria-invalid]').forEach(input => input.removeAttribute('aria-invalid'));
+  form.querySelectorAll('.eye').forEach(button => showPassword(button, false));
 }
 
 async function submit(form, action) {
@@ -473,14 +571,28 @@ document.querySelectorAll('dialog').forEach(dialog => {
     if (event.target === dialog) dialog.close();
   });
   dialog.addEventListener('close', () => resetForm(form));
-  form.querySelector('.close').addEventListener('click', () => dialog.close());
   form.querySelectorAll('input[name]').forEach(input => {
-    input.addEventListener('input', () => {
-      const message = check(input, false);
-      if (message) toast(form, message);
+    const filter = filters[input.name];
+    if (filter) {
+      input.addEventListener('beforeinput', event => {
+        if (event.inputType === 'insertText' && event.data && event.data.replace(filter, '') !== event.data) event.preventDefault();
+      });
+    }
+    input.addEventListener('input', event => {
+      if (filter) sanitize(input, typedInput.includes(event.inputType));
+      input.removeAttribute('aria-invalid');
+      if (input.name === 'username') watchUsername(input);
     });
   });
 });
+
+document.querySelectorAll('.eye').forEach(button => {
+  button.addEventListener('mousedown', event => event.preventDefault());
+  button.addEventListener('click', () => showPassword(button, button.getAttribute('aria-pressed') !== 'true'));
+});
+
+window.addEventListener('hashchange', showSection);
+showSection();
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -488,14 +600,14 @@ document.getElementById('signupForm').addEventListener('submit', event => {
   event.preventDefault();
   const form = event.currentTarget;
   if (!validate(form)) return;
-  const { username, email, password } = form.elements;
+  const { username, email, newPassword } = form.elements;
   submit(form, async () => {
     const availability = await sb.rpc('username_available', { p_username: username.value });
     if (availability.error) throw availability.error;
     if (!availability.data) throw fail('username_taken');
     const { error } = await sb.auth.signUp({
       email: email.value,
-      password: password.value,
+      password: newPassword.value,
       options: { data: { username: username.value, terms_accepted: true } }
     });
     if (error) throw error;
