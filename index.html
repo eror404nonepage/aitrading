@@ -138,7 +138,7 @@ button:disabled {
   z-index: 30;
   display: flex;
   flex-direction: column;
-  width: min(50vw, 240px);
+  width: min(56vw, 260px);
   overflow-y: auto;
   background: var(--black);
   border-right: 1px solid var(--silver-line);
@@ -451,13 +451,17 @@ const rules = {
   ]
 };
 
+const confirmOn = ['Supabase still requires email confirmation. Turn off “Confirm email” in the Email provider settings.'];
+
 const failures = {
   username_taken: ['This username is already taken.', ['username']],
   user_already_exists: ['This email address is already registered.', ['email']],
   email_exists: ['This email address is already registered.', ['email']],
   email_address_invalid: ['This email address is not accepted. Use a real email address.', ['email']],
   invalid_credentials: ['Incorrect username, email address or password.', ['identifier', 'password']],
-  email_not_confirmed: ['Please confirm your email address to continue.'],
+  email_not_confirmed: confirmOn,
+  email_address_not_authorized: confirmOn,
+  over_email_send_rate_limit: confirmOn,
   over_request_rate_limit: ['Too many attempts. Please try again later.'],
   PGRST202: ['The database rules are not installed yet. Run database.sql in Supabase.']
 };
@@ -492,7 +496,7 @@ function toast(form, message) {
   if (popup.classList.contains('show')) return;
   popup.textContent = message;
   popup.classList.add('show');
-  popup.timer = setTimeout(() => popup.classList.remove('show'), 3000);
+  popup.timer = setTimeout(() => popup.classList.remove('show'), Math.min(9000, 2000 + message.length * 50));
 }
 
 function check(input) {
