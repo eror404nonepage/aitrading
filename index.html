@@ -111,6 +111,12 @@ button:disabled {
   font-weight: 700;
 }
 
+.logout {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -132,7 +138,7 @@ button:disabled {
   z-index: 30;
   display: flex;
   flex-direction: column;
-  width: min(300px, 84vw);
+  width: min(50vw, 240px);
   overflow-y: auto;
   background: var(--black);
   border-right: 1px solid var(--silver-line);
@@ -148,10 +154,10 @@ button:disabled {
 }
 
 .menu-item {
-  padding: 18px 22px;
+  padding: 16px 18px;
   border-bottom: 1px solid var(--silver-faint);
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
 }
@@ -332,14 +338,14 @@ dialog .gold-button {
 </style>
 </head>
 <body>
-<header class="topbar" id="topbar">
+<header class="topbar" id="topbar" hidden>
   <button class="menu-button" id="menuButton" type="button" aria-label="Menu" aria-expanded="false" aria-controls="sideMenu"><span></span><span></span><span></span></button>
-  <div class="actions" id="guestActions" hidden>
+  <div class="actions">
     <button class="gold-button" type="button" data-open="signupDialog">Sign Up</button>
     <button class="gold-button" type="button" data-open="loginDialog">Log In</button>
   </div>
-  <button class="gold-button" id="logoutButton" type="button" hidden>Log Out</button>
 </header>
+<button class="gold-button logout" id="logoutButton" type="button" hidden>Log Out</button>
 
 <nav class="side-menu" id="sideMenu" aria-label="Menu">
   <a class="menu-item" href="#home">Home</a>
@@ -405,7 +411,6 @@ const topbar = document.getElementById('topbar');
 const menuButton = document.getElementById('menuButton');
 const sideMenu = document.getElementById('sideMenu');
 const overlay = document.getElementById('overlay');
-const guestActions = document.getElementById('guestActions');
 const logoutButton = document.getElementById('logoutButton');
 const sections = [...document.querySelectorAll('main section')];
 
@@ -452,8 +457,9 @@ const failures = {
   email_exists: ['This email address is already registered.', ['email']],
   email_address_invalid: ['This email address is not accepted. Use a real email address.', ['email']],
   invalid_credentials: ['Incorrect username, email address or password.', ['identifier', 'password']],
+  email_not_confirmed: ['Please confirm your email address to continue.'],
   over_request_rate_limit: ['Too many attempts. Please try again later.'],
-  unexpected_failure: ['Something went wrong. Please try again.']
+  PGRST202: ['The database rules are not installed yet. Run database.sql in Supabase.']
 };
 
 const fail = code => Object.assign(new Error(code), { code });
@@ -537,6 +543,12 @@ function resetForm(form) {
   form.querySelectorAll('.eye').forEach(button => showPassword(button, false));
 }
 
+function describe(error) {
+  if (failures[error.code]) return failures[error.code];
+  if (/failed to fetch|load failed|network/i.test(error.message)) return ['Cannot reach the server. Check your internet connection.'];
+  return [error.message || 'Something went wrong. Please try again.'];
+}
+
 async function submit(form, action) {
   const button = form.querySelector('[type="submit"]');
   button.disabled = true;
@@ -544,7 +556,7 @@ async function submit(form, action) {
     await action();
     form.closest('dialog').close();
   } catch (error) {
-    const [message, names = []] = failures[error.code] || [error.message || 'Something went wrong. Please try again.'];
+    const [message, names = []] = describe(error);
     names.forEach(name => form.elements[name].setAttribute('aria-invalid', 'true'));
     toast(form, message);
   } finally {
@@ -605,12 +617,13 @@ document.getElementById('signupForm').addEventListener('submit', event => {
     const availability = await sb.rpc('username_available', { p_username: username.value });
     if (availability.error) throw availability.error;
     if (!availability.data) throw fail('username_taken');
-    const { error } = await sb.auth.signUp({
+    const { data, error } = await sb.auth.signUp({
       email: email.value,
       password: newPassword.value,
       options: { data: { username: username.value, terms_accepted: true } }
     });
     if (error) throw error;
+    if (!data.session) throw fail('email_not_confirmed');
   });
 });
 
@@ -635,7 +648,7 @@ document.getElementById('loginForm').addEventListener('submit', event => {
 logoutButton.addEventListener('click', () => sb.auth.signOut({ scope: 'local' }));
 
 sb.auth.onAuthStateChange((_, session) => {
-  guestActions.hidden = Boolean(session);
+  topbar.hidden = Boolean(session);
   logoutButton.hidden = !session;
 });
 </script>
