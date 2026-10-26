@@ -451,17 +451,11 @@ const rules = {
   ]
 };
 
-const confirmOn = ['Supabase still requires email confirmation. Turn off “Confirm email” in the Email provider settings.'];
-
 const failures = {
   username_taken: ['This username is already taken.', ['username']],
-  user_already_exists: ['This email address is already registered.', ['email']],
-  email_exists: ['This email address is already registered.', ['email']],
-  email_address_invalid: ['This email address is not accepted. Use a real email address.', ['email']],
+  email_taken: ['This email address is already registered.', ['email']],
   invalid_credentials: ['Incorrect username, email address or password.', ['identifier', 'password']],
-  email_not_confirmed: confirmOn,
-  email_address_not_authorized: confirmOn,
-  over_email_send_rate_limit: confirmOn,
+  email_not_confirmed: ['This account was never confirmed. Please register again.'],
   over_request_rate_limit: ['Too many attempts. Please try again later.'],
   PGRST202: ['The database rules are not installed yet. Run database.sql in Supabase.']
 };
@@ -618,16 +612,16 @@ document.getElementById('signupForm').addEventListener('submit', event => {
   if (!validate(form)) return;
   const { username, email, newPassword } = form.elements;
   submit(form, async () => {
-    const availability = await sb.rpc('username_available', { p_username: username.value });
-    if (availability.error) throw availability.error;
-    if (!availability.data) throw fail('username_taken');
-    const { data, error } = await sb.auth.signUp({
-      email: email.value,
-      password: newPassword.value,
-      options: { data: { username: username.value, terms_accepted: true } }
+    const registration = await sb.rpc('register_account', {
+      p_username: username.value,
+      p_email: email.value,
+      p_password: newPassword.value,
+      p_terms: true
     });
+    if (registration.error) throw registration.error;
+    if (registration.data !== 'ok') throw fail(registration.data);
+    const { error } = await sb.auth.signInWithPassword({ email: email.value, password: newPassword.value });
     if (error) throw error;
-    if (!data.session) throw fail('email_not_confirmed');
   });
 });
 
